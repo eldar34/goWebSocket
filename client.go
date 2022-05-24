@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -65,8 +66,18 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		b := []byte("From server")
-		message = bytes.TrimSpace(bytes.Replace(b, newline, space, -1))
+		// Concatination server answer
+		// b := []byte("From server")
+		user_m := string(message)
+		anw_array := []string{"From server: ", user_m}
+		buffer := bytes.Buffer{}
+		for _, val := range anw_array {
+			buffer.WriteString(val)
+		}
+		fmt.Println(buffer.String())
+		server_anw := buffer.Bytes()
+
+		message = bytes.TrimSpace(bytes.Replace(server_anw, newline, space, -1))
 		c.hub.broadcast <- message
 	}
 }
