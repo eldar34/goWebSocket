@@ -10,4 +10,6 @@ RUN go get github.com/githubnemo/CompileDaemon
 
 RUN apk add acf-openssl
 
-ENTRYPOINT CompileDaemon --build="go build" --command=./main
+WORKDIR /app/cmd/app
+
+ENTRYPOINT CompileDaemon --build="go build" --command=./app

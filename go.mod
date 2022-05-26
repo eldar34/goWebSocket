@@ -1,4 +1,4 @@
-module main
+module testsocket
 
 go 1.18
 
