@@ -1,9 +1,11 @@
 package entity
 
 import (
-	"bytes"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -33,6 +35,20 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+// Connection ID
+var conn_id int = 1
+
+type UserMssage struct {
+	Message string `json:"message"`
+	Id      int    `json:"id"`
+}
+
+type User struct {
+	ID      int
+	Addr    string
+	EnterAt time.Time
+}
+
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
 	hub *Hub
@@ -42,6 +58,8 @@ type Client struct {
 
 	// Buffered channel of outbound messages.
 	send chan []byte
+
+	User
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -58,6 +76,14 @@ func (c *Client) readPump() {
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
+		// var test UserMssage
+		// errors := c.conn.ReadJSON(&test)
+		// if errors != nil {
+		// 	fmt.Println("Not valid")
+		// 	log.Printf("error: %v", errors)
+		// }
+		// fmt.Println(test.Message)
+
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
@@ -65,8 +91,15 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.hub.broadcast <- message
+
+		// message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+
+		data := map[string][]byte{
+			"message": message,
+			"id":      []byte(strconv.Itoa(c.ID)),
+		}
+		userMessage, _ := json.Marshal(data)
+		c.hub.broadcast <- userMessage
 	}
 }
 
@@ -123,9 +156,18 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
+	var p *int = &conn_id
+	*p++
 	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
-	client.hub.register <- client
 
+	client.ID = *p
+	client.Addr = conn.RemoteAddr().String()
+	client.EnterAt = time.Now()
+
+	client.hub.register <- client
+	fmt.Println(client.ID)
+	fmt.Println(client.Addr)
+	fmt.Println(client.EnterAt)
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump()

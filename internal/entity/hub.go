@@ -1,5 +1,10 @@
 package entity
 
+import (
+	"encoding/json"
+	"strconv"
+)
+
 // Copyright 2013 The Gorilla WebSocket Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
@@ -40,9 +45,15 @@ func (h *Hub) Run() {
 				close(client.send)
 			}
 		case message := <-h.broadcast:
+			var data map[string][]byte
+			json.Unmarshal(message, &data)
 			for client := range h.clients {
+				// Send response only to message -author
+				if strconv.Itoa(client.ID) != string(data["id"]) {
+					continue
+				}
 				select {
-				case client.send <- message:
+				case client.send <- data["message"]:
 				default:
 					close(client.send)
 					delete(h.clients, client)
