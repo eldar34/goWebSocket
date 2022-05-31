@@ -168,6 +168,7 @@ func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	fmt.Println(client.ID)
 	fmt.Println(client.Addr)
 	fmt.Println(client.EnterAt)
+
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump()

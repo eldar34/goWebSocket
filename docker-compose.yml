@@ -7,3 +7,21 @@ services:
       - '92:8080'
     volumes:
       - ./:/app
+    depends_on:
+      - db
+  db:
+    image: mariadb
+    restart: always
+    volumes:
+      - ./dockDB:/var/lib/mysql
+    environment: 
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}      
+
+  adminer:
+      image: adminer
+      restart: always
+      ports: 
+        - 9020:8080
