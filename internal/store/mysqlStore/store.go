@@ -3,9 +3,9 @@ package mysqlStore
 import (
 	"database/sql"
 
-	"testsocket/internal/store"
-
 	_ "github.com/go-sql-driver/mysql"
+
+	"github.com/eldar34/goWebSocket/internal/store"
 )
 
 type Store struct {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"testsocket/internal/app"
+	"github.com/eldar34/goWebSocket/internal/app"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module testsocket
+module github.com/eldar34/goWebSocket
 
 go 1.18
 

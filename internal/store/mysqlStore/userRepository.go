@@ -2,8 +2,9 @@ package mysqlStore
 
 import (
 	"database/sql"
-	"testsocket/internal/model"
-	"testsocket/internal/store"
+
+	"github.com/eldar34/goWebSocket/internal/model"
+	"github.com/eldar34/goWebSocket/internal/store"
 )
 
 type UserRepository struct {

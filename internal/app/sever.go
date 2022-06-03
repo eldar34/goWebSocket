@@ -12,8 +12,8 @@ import (
 
 	// "testsocket/pkg/repository"
 
-	"testsocket/config"
-	"testsocket/internal/store/mysqlStore"
+	"github.com/eldar34/goWebSocket/config"
+	"github.com/eldar34/goWebSocket/internal/store/mysqlStore"
 )
 
 var addr = flag.String("addr", ":8080", "http service address")
