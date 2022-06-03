@@ -1,18 +1,19 @@
 package app
 
 import (
+	"database/sql"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
 
-	"testsocket/internal/entity"
-	"testsocket/pkg/repository"
-
-	// "testsocket/config"
-
 	_ "github.com/go-sql-driver/mysql"
+
+	// "testsocket/pkg/repository"
+
+	"testsocket/config"
+	"testsocket/internal/store/mysqlStore"
 )
 
 var addr = flag.String("addr", ":8080", "http service address")
@@ -37,10 +38,20 @@ type userInfo struct {
 }
 
 func Logging(next http.Handler) http.Handler {
-	db, errors := repository.NewDb()
-	if errors != nil {
-		panic(errors)
+	config := config.NewConfig()
+	dbConnection, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", config.MySQL["user"], config.MySQL["password"], config.MySQL["host"], config.MySQL["port"], config.MySQL["db"]))
+	// defer store.Close()
+
+	if err != nil {
+		panic(err)
 	}
+
+	err = dbConnection.Ping()
+	if err != nil {
+		panic(err)
+	}
+
+	store := mysqlStore.New(dbConnection)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		// Get Bearer token
@@ -48,16 +59,16 @@ func Logging(next http.Handler) http.Handler {
 		splitToken := strings.Split(reqToken, "Bearer ")
 		reqToken = splitToken[1]
 
-		row := db.QueryRow("SELECT * from for_go.oauth_access_tokens WHERE access_token = ?", reqToken)
-		// defer db.Close()
+		row, err := store.User().FindByToken(reqToken)
+		// defer dbConnection.Close()
 
-		u := userInfo{}
-		err := row.Scan(&u.id, &u.user_id, &u.access_token)
 		if err != nil {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			// panic(err)
 			fmt.Println(err)
 		}
+		fmt.Println(row)
+		// u := userInfo{}
 
 		// if reqToken != "longkey" {
 		// 	http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -71,13 +82,13 @@ func Logging(next http.Handler) http.Handler {
 func Run() {
 
 	flag.Parse()
-	hub := entity.NewHub()
+	hub := NewHub()
 	go hub.Run()
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", serveHome)
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		entity.ServeWs(hub, w, r)
+		ServeWs(hub, w, r)
 	})
 	err := http.ListenAndServeTLS(*addr, "./../../cert/ca-cert.pem", "./../../cert/ca-key.pem", Logging(mux))
 	if err != nil {
